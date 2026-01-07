@@ -12,7 +12,7 @@ var currentPage = 'dashboard';
         <div class="metric-card">
             <div class="metric-header">
                 <h3>Contribution MTD</h3>
-                <span class="rag-badge rag-<%= contributionRAG %>"><%= contributionRAG.toUpperCase() %></span>
+                <span class="rag-badge rag-<%= contributionRAG %>" title="<%= contributionRAG.toUpperCase() %>"></span>
             </div>
             <div class="metric-value">£<%= contributionMTD.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
             <div class="metric-details">
@@ -48,7 +48,7 @@ var currentPage = 'dashboard';
             <div class="metric-card">
                 <div class="metric-header">
                     <h3>Install %</h3>
-                    <span class="rag-badge rag-<%= installRAG %>"><%= installRAG.toUpperCase() %></span>
+                    <span class="rag-badge rag-<%= installRAG %>" title="<%= installRAG.toUpperCase() %>"></span>
                 </div>
                 <div class="metric-value"><%= installPct.toFixed(1) %>%</div>
                 <div class="metric-details">
@@ -58,7 +58,7 @@ var currentPage = 'dashboard';
             <div class="metric-card">
                 <div class="metric-header">
                     <h3>Extras %</h3>
-                    <span class="rag-badge rag-<%= extrasRAG %>"><%= extrasRAG.toUpperCase() %></span>
+                    <span class="rag-badge rag-<%= extrasRAG %>" title="<%= extrasRAG.toUpperCase() %>"></span>
                 </div>
                 <div class="metric-value"><%= extrasPct.toFixed(1) %>%</div>
                 <div class="metric-details">
@@ -74,7 +74,7 @@ var currentPage = 'dashboard';
         <div class="metric-card">
             <div class="metric-header">
                 <h3>MTD Contribution per Box</h3>
-                <span class="rag-badge rag-<%= contributionPerBoxRAG %>"><%= contributionPerBoxRAG.toUpperCase() %></span>
+                <span class="rag-badge rag-<%= contributionPerBoxRAG %>" title="<%= contributionPerBoxRAG.toUpperCase() %>"></span>
             </div>
             <div class="metric-value">£<%= contributionPerBox.toFixed(2) %></div>
             <div class="metric-details">
@@ -90,7 +90,7 @@ var currentPage = 'dashboard';
             <div class="metric-card">
                 <div class="metric-header">
                     <h3>Cost Compliance</h3>
-                    <span class="rag-badge rag-<%= costComplianceRAG %>"><%= costComplianceRAG.toUpperCase() %></span>
+                    <span class="rag-badge rag-<%= costComplianceRAG %>" title="<%= costComplianceRAG.toUpperCase() %>"></span>
                 </div>
                 <div class="metric-value"><%= costCompliancePct.toFixed(1) %>%</div>
                 <div class="metric-details">
@@ -100,7 +100,7 @@ var currentPage = 'dashboard';
             <div class="metric-card">
                 <div class="metric-header">
                     <h3>Rework per Box</h3>
-                    <span class="rag-badge rag-<%= reworkRAG %>"><%= reworkRAG.toUpperCase() %></span>
+                    <span class="rag-badge rag-<%= reworkRAG %>" title="<%= reworkRAG.toUpperCase() %>"></span>
                 </div>
                 <div class="metric-value"><%= reworkPerBox.toFixed(2) %> hrs</div>
                 <div class="metric-details">
