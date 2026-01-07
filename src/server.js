@@ -35,6 +35,11 @@ app.use(session({
 // Static files
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// Health check endpoint (for Railway healthchecks - no auth/db required)
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // EJS layout helper - set default layout variables
 app.use((req, res, next) => {
     res.locals.currentPage = '';
@@ -105,20 +110,23 @@ app.use((err, req, res, next) => {
 
 // Initialize database and start server
 async function startServer() {
+    // Start the server first so healthchecks can pass
+    app.listen(PORT, () => {
+        console.log(`🚀 Box Control Dashboard running on port ${PORT}`);
+        console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
+        console.log(`💰 Sales: http://localhost:${PORT}/sales`);
+        console.log(`🏭 Production: http://localhost:${PORT}/production`);
+    });
+    
+    // Initialize database in background (non-blocking)
     try {
         const db = require('./db');
         await db.initializeSchema();
         console.log('✅ Database initialized');
-        
-        app.listen(PORT, () => {
-            console.log(`🚀 Box Control Dashboard running on port ${PORT}`);
-            console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
-            console.log(`💰 Sales: http://localhost:${PORT}/sales`);
-            console.log(`🏭 Production: http://localhost:${PORT}/production`);
-        });
     } catch (error) {
-        console.error('❌ Failed to start server:', error);
-        process.exit(1);
+        console.error('❌ Failed to initialize database:', error);
+        console.error('⚠️  Server is running but database is not available');
+        // Don't exit - let the server run so we can see the error in logs
     }
 }
 
