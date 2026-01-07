@@ -23,6 +23,11 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     res.locals.currentPage = 'dashboard';
     res.locals.title = 'Dashboard';
     try {
+        // Check if DATABASE_URL is set
+        if (!process.env.DATABASE_URL) {
+            throw new Error('DATABASE_URL environment variable is not set. Please configure it in Railway.');
+        }
+
         // Initialize schema if needed
         await db.initializeSchema();
 
@@ -112,8 +117,20 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         });
     } catch (error) {
         console.error('Error loading dashboard:', error);
+        console.error('Error stack:', error.stack);
+        
+        // Provide more helpful error messages
+        let errorMessage = 'Error loading dashboard';
+        if (error.message.includes('DATABASE_URL')) {
+            errorMessage = 'Database not configured. Please set DATABASE_URL in Railway environment variables.';
+        } else if (error.message.includes('connection') || error.message.includes('ECONNREFUSED')) {
+            errorMessage = 'Cannot connect to database. Please check your DATABASE_URL and ensure PostgreSQL is running.';
+        } else if (error.message.includes('relation') || error.message.includes('does not exist')) {
+            errorMessage = 'Database tables not initialized. The schema should initialize automatically.';
+        }
+        
         res.status(500).render('error', { 
-            message: 'Error loading dashboard',
+            message: errorMessage,
             error: process.env.NODE_ENV === 'development' ? error : null
         });
     }
