@@ -9,13 +9,33 @@ router.get('/production', requireAuth, async (req, res) => {
     res.locals.currentPage = 'production';
     res.locals.title = 'Production';
     try {
+        // Check if DATABASE_URL is set
+        if (!process.env.DATABASE_URL) {
+            throw new Error('DATABASE_URL environment variable is not set. Please configure it in Railway.');
+        }
+
         await db.initializeSchema();
         
-        const weekCommencing = req.query.week_commencing || null;
+        let weekCommencing = req.query.week_commencing || null;
         let existingData = null;
 
+        // Parse and normalize the date if provided
         if (weekCommencing) {
-            existingData = await db.getProductionWeekly(weekCommencing);
+            try {
+                // Try to parse the date - handle both ISO strings and date objects
+                const date = new Date(weekCommencing);
+                if (isNaN(date.getTime())) {
+                    // Invalid date, clear it
+                    weekCommencing = null;
+                } else {
+                    // Format as YYYY-MM-DD for database query
+                    weekCommencing = date.toISOString().split('T')[0];
+                    existingData = await db.getProductionWeekly(weekCommencing);
+                }
+            } catch (dateError) {
+                console.error('Error parsing week_commencing date:', dateError);
+                weekCommencing = null;
+            }
         }
 
         // Get all production weeks for reference
