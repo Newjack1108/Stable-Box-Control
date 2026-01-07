@@ -175,7 +175,7 @@ body {
     gap: 2rem;
 }
 
-/* Traffic Light RAG Badges - Circular with Glow */
+/* Traffic Light RAG Badges - Circular */
 .rag-badge {
     display: inline-flex;
     align-items: center;
@@ -187,67 +187,38 @@ body {
     font-weight: bold;
     text-transform: uppercase;
     position: relative;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}
-
-.rag-badge::before {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    opacity: 0.6;
-    filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
 }
 
 .rag-green {
     background: radial-gradient(circle at 30% 30%, #4ade80, #22c55e);
     border: 3px solid #16a34a;
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.rag-green::before {
-    background: #22c55e;
-    box-shadow: 0 0 30px rgba(34, 197, 94, 0.8);
 }
 
 .rag-green:hover {
-    box-shadow: 0 0 30px rgba(34, 197, 94, 0.8), 0 6px 16px rgba(0, 0, 0, 0.3);
-    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.05);
 }
 
 .rag-amber {
     background: radial-gradient(circle at 30% 30%, #fbbf24, #f59e0b);
     border: 3px solid #d97706;
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.6), 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.rag-amber::before {
-    background: #f59e0b;
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.8);
 }
 
 .rag-amber:hover {
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.8), 0 6px 16px rgba(0, 0, 0, 0.3);
-    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.05);
 }
 
 .rag-red {
     background: radial-gradient(circle at 30% 30%, #f87171, #ef4444);
     border: 3px solid #dc2626;
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6), 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.rag-red::before {
-    background: #ef4444;
-    box-shadow: 0 0 30px rgba(239, 68, 68, 0.8);
 }
 
 .rag-red:hover {
-    box-shadow: 0 0 30px rgba(239, 68, 68, 0.8), 0 6px 16px rgba(0, 0, 0, 0.3);
-    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.05);
 }
 
 /* Tables */
