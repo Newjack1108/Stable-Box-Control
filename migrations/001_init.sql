@@ -48,7 +48,7 @@ CREATE INDEX IF NOT EXISTS idx_sales_week_commencing ON sales_weekly(week_commen
 CREATE INDEX IF NOT EXISTS idx_production_week_commencing ON production_weekly(week_commencing);
 
 -- Seed settings table with default values if empty
-INSERT INTO settings (
+INSERT INTO box_control_settings (
     monthly_contribution_target,
     survival_contribution,
     target_boxes_per_month,
