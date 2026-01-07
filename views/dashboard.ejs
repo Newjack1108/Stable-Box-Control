@@ -5,6 +5,14 @@ var currentPage = 'dashboard';
 <%- include('partials/header') %>
 <div class="dashboard">
     <h1>Dashboard</h1>
+    <div class="period-info" style="margin-bottom: 2rem; padding: 1rem; background: #f0f7f4; border-radius: 8px; border-left: 4px solid var(--light-green);">
+        <p style="margin: 0; color: var(--text-medium); font-size: 0.95rem;">
+            <strong>MTD Period:</strong> <%= currentMonth %> (<%= new Date(currentMonthStart).toLocaleDateString('en-GB') %> - <%= new Date(currentMonthEnd).toLocaleDateString('en-GB') %>)
+            <% if (last4WeeksStart && last4WeeksEnd) { %>
+                | <strong>Last 4 Weeks:</strong> <%= new Date(last4WeeksStart).toLocaleDateString('en-GB') %> - <%= new Date(last4WeeksEnd).toLocaleDateString('en-GB') %>
+            <% } %>
+        </p>
+    </div>
     
     <!-- Section 1: Safety Status -->
     <section class="dashboard-section">
@@ -16,8 +24,13 @@ var currentPage = 'dashboard';
             </div>
             <div class="metric-value">£<%= contributionMTD.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
             <div class="metric-details">
+                <p><strong>Period:</strong> <%= currentMonth %></p>
                 <p>Target: £<%= parseFloat(settings.monthly_contribution_target).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
                 <p>Survival: £<%= parseFloat(settings.survival_contribution).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                <p><strong>Boxes Sold MTD:</strong> <%= salesMTD.boxes_sold %> × £<%= parseFloat(settings.contribution_per_box).toFixed(2) %> = £<%= contributionMTD.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                <% if (salesMTD.boxes_sold === 0) { %>
+                    <p style="color: #e74c3c; font-weight: 600;">⚠️ No sales data found for <%= currentMonth %></p>
+                <% } %>
             </div>
         </div>
     </section>
@@ -29,14 +42,31 @@ var currentPage = 'dashboard';
             <div class="metric-card">
                 <h3>Boxes Sold MTD</h3>
                 <div class="metric-value"><%= salesMTD.boxes_sold %></div>
+                <div class="metric-details">
+                    <p><strong>Period:</strong> <%= currentMonth %></p>
+                    <% if (salesLast4Weeks && salesLast4Weeks.length > 0) { %>
+                        <p><strong>Last 4 Weeks Total:</strong> <%= salesLast4Weeks.reduce((sum, w) => sum + (parseInt(w.boxes_sold) || 0), 0) %></p>
+                    <% } %>
+                </div>
             </div>
             <div class="metric-card">
                 <h3>Boxes Produced MTD</h3>
                 <div class="metric-value"><%= productionMTD.boxes_produced %></div>
+                <div class="metric-details">
+                    <p><strong>Period:</strong> <%= currentMonth %></p>
+                    <% if (productionLast4Weeks && productionLast4Weeks.length > 0) { %>
+                        <p><strong>Last 4 Weeks Total:</strong> <%= productionLast4Weeks.reduce((sum, w) => sum + (parseInt(w.boxes_produced) || 0), 0) %></p>
+                    <% } %>
+                </div>
             </div>
             <div class="metric-card">
                 <h3>Average Boxes/Week (Last 4 Weeks)</h3>
                 <div class="metric-value"><%= avgBoxesPerWeek.toFixed(1) %></div>
+                <div class="metric-details">
+                    <% if (last4WeeksStart && last4WeeksEnd) { %>
+                        <p><strong>Period:</strong> <%= new Date(last4WeeksStart).toLocaleDateString('en-GB') %> - <%= new Date(last4WeeksEnd).toLocaleDateString('en-GB') %></p>
+                    <% } %>
+                </div>
             </div>
         </div>
     </section>

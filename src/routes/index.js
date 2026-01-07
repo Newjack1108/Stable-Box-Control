@@ -81,6 +81,21 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         // Forward look
         const forwardLook = await db.getForwardLook();
 
+        // Calculate period information for display
+        const now = new Date();
+        const currentMonth = now.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        // Get date range for last 4 weeks
+        let last4WeeksStart = null;
+        let last4WeeksEnd = null;
+        if (salesLast4Weeks.length > 0) {
+            const dates = salesLast4Weeks.map(w => new Date(w.week_commencing)).sort((a, b) => a - b);
+            last4WeeksStart = dates[0];
+            last4WeeksEnd = dates[dates.length - 1];
+        }
+
         // Calculate RAG statuses
         const contributionRAG = getContributionRAG(
             contributionMTD,
@@ -113,6 +128,13 @@ router.get('/dashboard', requireAuth, async (req, res) => {
             reworkRAG,
             avgBoxesPerWeek,
             forwardLook,
+            currentMonth,
+            currentMonthStart: currentMonthStart.toISOString().split('T')[0],
+            currentMonthEnd: currentMonthEnd.toISOString().split('T')[0],
+            last4WeeksStart: last4WeeksStart ? last4WeeksStart.toISOString().split('T')[0] : null,
+            last4WeeksEnd: last4WeeksEnd ? last4WeeksEnd.toISOString().split('T')[0] : null,
+            salesLast4Weeks,
+            productionLast4Weeks,
             isAuthenticated: checkAuth(req)
         });
     } catch (error) {
