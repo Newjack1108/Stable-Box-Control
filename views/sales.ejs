@@ -83,7 +83,10 @@ var currentPage = 'sales';
                             <td><%= new Date(week.week_commencing).toLocaleDateString('en-GB') %></td>
                             <td><%= week.boxes_sold %></td>
                             <td><%= week.installs_sold %></td>
-                            <td><a href="/sales?week_commencing=<%= week.week_commencing %>" class="btn-link">Edit</a></td>
+                            <td style="display: flex; gap: 1rem; align-items: center;">
+                                <a href="/sales?week_commencing=<%= encodeURIComponent(new Date(week.week_commencing).toISOString().split('T')[0]) %>" class="btn-link">Edit</a>
+                                <button onclick="deleteSalesWeek('<%= new Date(week.week_commencing).toISOString().split('T')[0] %>', '<%= new Date(week.week_commencing).toLocaleDateString('en-GB') %>')" class="btn-delete">Delete</button>
+                            </td>
                         </tr>
                     <% }); %>
                 </tbody>
