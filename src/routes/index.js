@@ -43,7 +43,12 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         const productionLast4Weeks = await db.getProductionLast4Weeks();
 
         // Calculate metrics
-        const contributionMTD = salesMTD.boxes_sold * parseFloat(settings.contribution_per_box);
+        // Use actual revenue × gross margin instead of boxes × contribution_per_box
+        const grossMarginPct = parseFloat(settings.gross_margin_pct || 0.35);
+        const totalRevenueMTD = parseFloat(salesMTD.box_revenue || 0) + 
+                                 parseFloat(salesMTD.extras_revenue || 0) + 
+                                 parseFloat(salesMTD.install_revenue || 0);
+        const contributionMTD = totalRevenueMTD * grossMarginPct;
 
         // Install % (last 4 weeks weighted)
         const totalBoxes4Weeks = salesLast4Weeks.reduce((sum, w) => sum + (w.boxes_sold || 0), 0);
@@ -55,10 +60,10 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         const totalExtrasRevenue4Weeks = salesLast4Weeks.reduce((sum, w) => sum + parseFloat(w.extras_revenue || 0), 0);
         const extrasPct = totalBoxRevenue4Weeks > 0 ? totalExtrasRevenue4Weeks / totalBoxRevenue4Weeks : 0;
 
-        // Contribution per box (MTD)
+        // Contribution per box (MTD) - actual average
         const contributionPerBox = salesMTD.boxes_sold > 0 
             ? contributionMTD / salesMTD.boxes_sold 
-            : 0;
+            : parseFloat(settings.contribution_per_box || 0);
 
         // Cost compliance (last 4 weeks)
         const totalBoxesProduced4Weeks = productionLast4Weeks.reduce((sum, w) => sum + (w.boxes_produced || 0), 0);
@@ -165,6 +170,9 @@ router.post('/api/settings', requireAuth, async (req, res) => {
         
         // Validate numeric fields
         const numericFields = [
+            'annual_turnover',
+            'base_box_price',
+            'gross_margin_pct',
             'monthly_contribution_target',
             'survival_contribution',
             'target_boxes_per_month',
@@ -176,12 +184,30 @@ router.post('/api/settings', requireAuth, async (req, res) => {
             'right_first_time_target'
         ];
 
+        // Validate install and extras percentages don't exceed reasonable limits
+        if (updates.target_install_pct !== undefined || updates.target_extras_pct !== undefined) {
+            const installPct = parseFloat(updates.target_install_pct || req.body.target_install_pct || 0);
+            const extrasPct = parseFloat(updates.target_extras_pct || req.body.target_extras_pct || 0);
+            if (installPct + extrasPct > 1.0) {
+                return res.status(400).json({ 
+                    error: 'Install % + Extras % cannot exceed 100%' 
+                });
+            }
+        }
+
         for (const field of numericFields) {
             if (updates[field] !== undefined) {
                 const value = parseFloat(updates[field]);
                 if (isNaN(value) || value < 0) {
                     return res.status(400).json({ 
                         error: `Invalid value for ${field}` 
+                    });
+                }
+                // Special validation for percentages
+                if ((field === 'target_install_pct' || field === 'target_extras_pct' || field === 'gross_margin_pct' || 
+                     field === 'cost_compliance_target' || field === 'right_first_time_target') && value > 1) {
+                    return res.status(400).json({ 
+                        error: `${field} cannot exceed 1.0 (100%)` 
                     });
                 }
                 updates[field] = value;
@@ -192,7 +218,7 @@ router.post('/api/settings', requireAuth, async (req, res) => {
         res.json({ success: true, settings: updated });
     } catch (error) {
         console.error('Error updating settings:', error);
-        res.status(500).json({ error: 'Error updating settings' });
+        res.status(500).json({ error: 'Error updating settings: ' + error.message });
     }
 });
 

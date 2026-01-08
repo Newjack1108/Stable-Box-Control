@@ -173,42 +173,80 @@ var currentPage = 'dashboard';
         <h2>Settings <button class="btn-toggle" onclick="toggleSettings()">Show/Hide</button></h2>
         <div id="settings-panel" style="display: none;">
             <form id="settings-form" onsubmit="updateSettings(event)">
+                <h3 style="margin-bottom: 1rem; color: var(--dark-green);">Primary Settings</h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="monthly_contribution_target">Monthly Contribution Target:</label>
-                        <input type="number" id="monthly_contribution_target" name="monthly_contribution_target" 
-                               value="<%= settings.monthly_contribution_target %>" step="0.01" required>
+                        <label for="annual_turnover">Annual Turnover (£):</label>
+                        <input type="number" id="annual_turnover" name="annual_turnover" 
+                               value="<%= settings.annual_turnover || '' %>" step="0.01" min="0">
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Used to calculate monthly contribution target</small>
                     </div>
                     <div class="form-group">
-                        <label for="survival_contribution">Survival Contribution:</label>
-                        <input type="number" id="survival_contribution" name="survival_contribution" 
-                               value="<%= settings.survival_contribution %>" step="0.01" required>
+                        <label for="base_box_price">Base Box Price (£):</label>
+                        <input type="number" id="base_box_price" name="base_box_price" 
+                               value="<%= settings.base_box_price || '' %>" step="0.01" min="0">
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Base price before installs/extras</small>
                     </div>
                     <div class="form-group">
-                        <label for="target_boxes_per_month">Target Boxes per Month:</label>
-                        <input type="number" id="target_boxes_per_month" name="target_boxes_per_month" 
-                               value="<%= settings.target_boxes_per_month %>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="target_boxes_per_week">Target Boxes per Week:</label>
-                        <input type="number" id="target_boxes_per_week" name="target_boxes_per_week" 
-                               value="<%= settings.target_boxes_per_week %>" required>
+                        <label for="gross_margin_pct">Gross Margin %:</label>
+                        <input type="number" id="gross_margin_pct" name="gross_margin_pct" 
+                               value="<%= settings.gross_margin_pct || 0.35 %>" step="0.01" min="0" max="1" required>
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Default: 0.35 (35%)</small>
                     </div>
                     <div class="form-group">
                         <label for="target_install_pct">Target Install %:</label>
                         <input type="number" id="target_install_pct" name="target_install_pct" 
                                value="<%= settings.target_install_pct %>" step="0.01" min="0" max="1" required>
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Percentage of total sale (e.g., 0.20 = 20%)</small>
                     </div>
                     <div class="form-group">
                         <label for="target_extras_pct">Target Extras %:</label>
                         <input type="number" id="target_extras_pct" name="target_extras_pct" 
                                value="<%= settings.target_extras_pct %>" step="0.01" min="0" max="1" required>
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Percentage of total sale (e.g., 0.20 = 20%)</small>
                     </div>
                     <div class="form-group">
-                        <label for="contribution_per_box">Contribution per Box:</label>
-                        <input type="number" id="contribution_per_box" name="contribution_per_box" 
-                               value="<%= settings.contribution_per_box %>" step="0.01" required>
+                        <label for="survival_contribution">Survival Contribution (£):</label>
+                        <input type="number" id="survival_contribution" name="survival_contribution" 
+                               value="<%= settings.survival_contribution %>" step="0.01" required>
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Minimum monthly contribution</small>
                     </div>
+                </div>
+
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--dark-green);">Calculated Values</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Monthly Contribution Target (£):</label>
+                        <input type="number" id="monthly_contribution_target" name="monthly_contribution_target" 
+                               value="<%= settings.monthly_contribution_target %>" step="0.01" 
+                               style="background-color: #f0f7f4; border-color: var(--light-green);" readonly>
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Calculated from Annual Turnover × Gross Margin ÷ 12</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Contribution per Box (£):</label>
+                        <input type="number" id="contribution_per_box" name="contribution_per_box" 
+                               value="<%= settings.contribution_per_box %>" step="0.01"
+                               style="background-color: #f0f7f4; border-color: var(--light-green);" readonly>
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Calculated from Base Box Price × (1 + Install % + Extras %) × Gross Margin</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Boxes per Month:</label>
+                        <input type="number" id="target_boxes_per_month" name="target_boxes_per_month" 
+                               value="<%= settings.target_boxes_per_month %>"
+                               style="background-color: #f0f7f4; border-color: var(--light-green);" readonly>
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Calculated from Monthly Contribution ÷ Contribution per Box</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Boxes per Week:</label>
+                        <input type="number" id="target_boxes_per_week" name="target_boxes_per_week" 
+                               value="<%= settings.target_boxes_per_week %>"
+                               style="background-color: #f0f7f4; border-color: var(--light-green);" readonly>
+                        <small style="color: var(--text-medium); font-size: 0.85rem;">Calculated from Target Boxes per Month ÷ 4.33</small>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--dark-green);">Other Settings</h3>
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="cost_compliance_target">Cost Compliance Target:</label>
                         <input type="number" id="cost_compliance_target" name="cost_compliance_target" 

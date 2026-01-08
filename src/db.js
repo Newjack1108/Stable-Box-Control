@@ -37,12 +37,28 @@ async function initializeSchema() {
     const db = initializePool();
     
     try {
-        // Read and execute migration SQL
+        // Read and execute initial migration SQL
         const migrationPath = path.join(__dirname, '..', 'migrations', '001_init.sql');
         const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
         
         await db.query(migrationSQL);
         console.log('✅ Database schema initialized');
+        
+        // Run business calculations migration if it exists
+        try {
+            const businessCalcPath = path.join(__dirname, '..', 'migrations', '002_business_calculations.sql');
+            if (fs.existsSync(businessCalcPath)) {
+                const businessCalcSQL = fs.readFileSync(businessCalcPath, 'utf8');
+                await db.query(businessCalcSQL);
+                console.log('✅ Business calculations migration applied');
+            }
+        } catch (migrationError) {
+            // Migration might already be applied, that's okay
+            if (!migrationError.message.includes('already exists') && !migrationError.message.includes('duplicate')) {
+                console.warn('⚠️ Business calculations migration warning:', migrationError.message);
+            }
+        }
+        
         isInitialized = true;
     } catch (error) {
         console.error('❌ Error initializing database schema:', error);
@@ -62,6 +78,33 @@ async function query(text, params) {
     }
 }
 
+// Calculation helper functions
+function calculateMonthlyContribution(annualTurnover, grossMarginPct) {
+    if (!annualTurnover || !grossMarginPct || annualTurnover <= 0 || grossMarginPct <= 0) {
+        return null;
+    }
+    return (annualTurnover / 12) * grossMarginPct;
+}
+
+function calculateContributionPerBox(baseBoxPrice, installPct, extrasPct, grossMarginPct) {
+    if (!baseBoxPrice || !grossMarginPct || baseBoxPrice <= 0 || grossMarginPct <= 0) {
+        return null;
+    }
+    // Expected Total Sale per Box = Base Box Price × (1 + Install % + Extras %)
+    const expectedTotalSale = baseBoxPrice * (1 + (installPct || 0) + (extrasPct || 0));
+    // Contribution per Box = Expected Total Sale × Gross Margin %
+    return expectedTotalSale * grossMarginPct;
+}
+
+function calculateTargetBoxes(monthlyContribution, contributionPerBox) {
+    if (!monthlyContribution || !contributionPerBox || monthlyContribution <= 0 || contributionPerBox <= 0) {
+        return { perMonth: null, perWeek: null };
+    }
+    const perMonth = Math.round(monthlyContribution / contributionPerBox);
+    const perWeek = Math.round(perMonth / 4.33);
+    return { perMonth, perWeek };
+}
+
 // Settings operations
 async function getSettings() {
     const result = await query('SELECT * FROM box_control_settings LIMIT 1');
@@ -75,11 +118,17 @@ async function getSettings() {
 }
 
 async function updateSettings(updates) {
+    // Get current settings to use for calculations
+    const currentSettings = await getSettings();
+    
     const fields = [];
     const values = [];
     let paramIndex = 1;
 
     const allowedFields = [
+        'annual_turnover',
+        'base_box_price',
+        'gross_margin_pct',
         'monthly_contribution_target',
         'survival_contribution',
         'target_boxes_per_month',
@@ -91,8 +140,11 @@ async function updateSettings(updates) {
         'right_first_time_target'
     ];
 
+    // Track which fields are being updated
+    const updatingFields = {};
     for (const [key, value] of Object.entries(updates)) {
         if (allowedFields.includes(key)) {
+            updatingFields[key] = value;
             fields.push(`${key} = $${paramIndex}`);
             values.push(value);
             paramIndex++;
@@ -101,6 +153,102 @@ async function updateSettings(updates) {
 
     if (fields.length === 0) {
         throw new Error('No valid fields to update');
+    }
+
+    // Auto-calculate dependent values
+    const grossMarginPct = updatingFields.gross_margin_pct !== undefined 
+        ? parseFloat(updatingFields.gross_margin_pct) 
+        : parseFloat(currentSettings.gross_margin_pct || 0.35);
+    
+    const annualTurnover = updatingFields.annual_turnover !== undefined
+        ? parseFloat(updatingFields.annual_turnover)
+        : parseFloat(currentSettings.annual_turnover || 0);
+    
+    const baseBoxPrice = updatingFields.base_box_price !== undefined
+        ? parseFloat(updatingFields.base_box_price)
+        : parseFloat(currentSettings.base_box_price || 0);
+    
+    const installPct = updatingFields.target_install_pct !== undefined
+        ? parseFloat(updatingFields.target_install_pct)
+        : parseFloat(currentSettings.target_install_pct || 0);
+    
+    const extrasPct = updatingFields.target_extras_pct !== undefined
+        ? parseFloat(updatingFields.target_extras_pct)
+        : parseFloat(currentSettings.target_extras_pct || 0);
+
+    // If annual_turnover is being updated, calculate monthly_contribution_target
+    if (updatingFields.annual_turnover !== undefined && annualTurnover > 0) {
+        const monthlyContribution = calculateMonthlyContribution(annualTurnover, grossMarginPct);
+        if (monthlyContribution !== null && !updatingFields.monthly_contribution_target) {
+            fields.push(`monthly_contribution_target = $${paramIndex}`);
+            values.push(monthlyContribution);
+            paramIndex++;
+        }
+    }
+
+    // If base_box_price, install_pct, extras_pct, or gross_margin_pct change, calculate contribution_per_box
+    if ((updatingFields.base_box_price !== undefined || 
+         updatingFields.target_install_pct !== undefined || 
+         updatingFields.target_extras_pct !== undefined ||
+         updatingFields.gross_margin_pct !== undefined) && 
+        baseBoxPrice > 0) {
+        const contributionPerBox = calculateContributionPerBox(baseBoxPrice, installPct, extrasPct, grossMarginPct);
+        if (contributionPerBox !== null && !updatingFields.contribution_per_box) {
+            fields.push(`contribution_per_box = $${paramIndex}`);
+            values.push(contributionPerBox);
+            paramIndex++;
+        }
+    }
+
+    // Calculate target boxes if we have monthly contribution and contribution per box
+    // Use newly calculated values if they were calculated, otherwise use updated or current values
+    let monthlyContribution = updatingFields.monthly_contribution_target !== undefined
+        ? parseFloat(updatingFields.monthly_contribution_target)
+        : (annualTurnover > 0 && updatingFields.annual_turnover !== undefined
+            ? calculateMonthlyContribution(annualTurnover, grossMarginPct)
+            : parseFloat(currentSettings.monthly_contribution_target || 0));
+    
+    let contributionPerBox = updatingFields.contribution_per_box !== undefined
+        ? parseFloat(updatingFields.contribution_per_box)
+        : (baseBoxPrice > 0 && (updatingFields.base_box_price !== undefined || 
+                                updatingFields.target_install_pct !== undefined || 
+                                updatingFields.target_extras_pct !== undefined ||
+                                updatingFields.gross_margin_pct !== undefined)
+            ? calculateContributionPerBox(baseBoxPrice, installPct, extrasPct, grossMarginPct)
+            : parseFloat(currentSettings.contribution_per_box || 0));
+
+    // If we calculated monthly contribution above, use that value
+    if (updatingFields.annual_turnover !== undefined && annualTurnover > 0 && !updatingFields.monthly_contribution_target) {
+        const calculatedMonthly = calculateMonthlyContribution(annualTurnover, grossMarginPct);
+        if (calculatedMonthly !== null) {
+            monthlyContribution = calculatedMonthly;
+        }
+    }
+
+    // If we calculated contribution per box above, use that value
+    if ((updatingFields.base_box_price !== undefined || 
+         updatingFields.target_install_pct !== undefined || 
+         updatingFields.target_extras_pct !== undefined ||
+         updatingFields.gross_margin_pct !== undefined) && 
+        baseBoxPrice > 0 && !updatingFields.contribution_per_box) {
+        const calculatedContribution = calculateContributionPerBox(baseBoxPrice, installPct, extrasPct, grossMarginPct);
+        if (calculatedContribution !== null) {
+            contributionPerBox = calculatedContribution;
+        }
+    }
+
+    if (monthlyContribution > 0 && contributionPerBox > 0) {
+        const targetBoxes = calculateTargetBoxes(monthlyContribution, contributionPerBox);
+        if (targetBoxes.perMonth !== null && !updatingFields.target_boxes_per_month) {
+            fields.push(`target_boxes_per_month = $${paramIndex}`);
+            values.push(targetBoxes.perMonth);
+            paramIndex++;
+        }
+        if (targetBoxes.perWeek !== null && !updatingFields.target_boxes_per_week) {
+            fields.push(`target_boxes_per_week = $${paramIndex}`);
+            values.push(targetBoxes.perWeek);
+            paramIndex++;
+        }
     }
 
     fields.push(`updated_at = CURRENT_TIMESTAMP`);
