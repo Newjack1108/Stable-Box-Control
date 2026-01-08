@@ -9,34 +9,14 @@ router.get('/sales', requireAuth, async (req, res) => {
     res.locals.currentPage = 'sales';
     res.locals.title = 'Sales';
     try {
-        // Check if DATABASE_URL is set
-        if (!process.env.DATABASE_URL) {
-            throw new Error('DATABASE_URL environment variable is not set. Please configure it in Railway.');
-        }
-
         await db.initializeSchema();
         
-        let weekCommencing = req.query.week_commencing || null;
+        const weekCommencing = req.query.week_commencing || null;
         const warning = req.query.warning || null;
         let existingData = null;
 
-        // Parse and normalize the date if provided
         if (weekCommencing) {
-            try {
-                // Try to parse the date - handle both ISO strings and date objects
-                const date = new Date(weekCommencing);
-                if (isNaN(date.getTime())) {
-                    // Invalid date, clear it
-                    weekCommencing = null;
-                } else {
-                    // Format as YYYY-MM-DD for database query
-                    weekCommencing = date.toISOString().split('T')[0];
-                    existingData = await db.getSalesWeekly(weekCommencing);
-                }
-            } catch (dateError) {
-                console.error('Error parsing week_commencing date:', dateError);
-                weekCommencing = null;
-            }
+            existingData = await db.getSalesWeekly(weekCommencing);
         }
 
         // Get all sales weeks for reference
@@ -132,6 +112,25 @@ router.post('/sales', requireAuth, async (req, res) => {
             existingData: req.body,
             allWeeks: await db.getSalesWeekly()
         });
+    }
+});
+
+// Delete sales data
+router.delete('/sales/:weekCommencing', requireAuth, async (req, res) => {
+    try {
+        await db.initializeSchema();
+        
+        const weekCommencing = req.params.weekCommencing;
+        const deleted = await db.deleteSalesWeekly(weekCommencing);
+        
+        if (deleted) {
+            res.json({ success: true, message: 'Sales data deleted successfully' });
+        } else {
+            res.status(404).json({ success: false, error: 'Sales data not found' });
+        }
+    } catch (error) {
+        console.error('Error deleting sales data:', error);
+        res.status(500).json({ success: false, error: 'Error deleting sales data: ' + error.message });
     }
 });
 

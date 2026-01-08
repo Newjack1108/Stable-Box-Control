@@ -14,7 +14,7 @@ var currentPage = 'production';
         <div class="form-group">
             <label for="week_commencing">Week Commencing (Monday):</label>
             <input type="date" id="week_commencing" name="week_commencing" 
-                   value="<%= existingData ? (existingData.week_commencing instanceof Date ? existingData.week_commencing.toISOString().split('T')[0] : new Date(existingData.week_commencing).toISOString().split('T')[0]) : (typeof weekCommencing !== 'undefined' && weekCommencing ? (weekCommencing instanceof Date ? weekCommencing.toISOString().split('T')[0] : new Date(weekCommencing).toISOString().split('T')[0]) : '') %>" 
+                   value="<%= existingData ? existingData.week_commencing : (typeof weekCommencing !== 'undefined' && weekCommencing ? weekCommencing : '') %>" 
                    required>
         </div>
         
@@ -79,7 +79,7 @@ var currentPage = 'production';
                             <td><%= new Date(week.week_commencing).toLocaleDateString('en-GB') %></td>
                             <td><%= week.boxes_produced %></td>
                             <td><%= week.installs_completed %></td>
-                            <td><a href="/production?week_commencing=<%= encodeURIComponent(new Date(week.week_commencing).toISOString().split('T')[0]) %>" class="btn-link">Edit</a></td>
+                            <td><a href="/production?week_commencing=<%= week.week_commencing %>" class="btn-link">Edit</a></td>
                         </tr>
                     <% }); %>
                 </tbody>
@@ -87,4 +87,33 @@ var currentPage = 'production';
         </div>
     <% } %>
 </div>
+
+<script>
+async function deleteProductionWeek(weekCommencing, weekDisplay) {
+    if (!confirm(`Are you sure you want to delete production data for week commencing ${weekDisplay}? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/production/${encodeURIComponent(weekCommencing)}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Production data deleted successfully');
+            location.reload();
+        } else {
+            alert('Error deleting production data: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error deleting production data: ' + error.message);
+    }
+}
+</script>
+
 <%- include('partials/footer') %>

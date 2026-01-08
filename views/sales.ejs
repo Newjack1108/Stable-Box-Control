@@ -18,7 +18,7 @@ var currentPage = 'sales';
         <div class="form-group">
             <label for="week_commencing">Week Commencing (Monday):</label>
             <input type="date" id="week_commencing" name="week_commencing" 
-                   value="<%= existingData ? (existingData.week_commencing instanceof Date ? existingData.week_commencing.toISOString().split('T')[0] : new Date(existingData.week_commencing).toISOString().split('T')[0]) : (typeof weekCommencing !== 'undefined' && weekCommencing ? (weekCommencing instanceof Date ? weekCommencing.toISOString().split('T')[0] : new Date(weekCommencing).toISOString().split('T')[0]) : '') %>" 
+                   value="<%= existingData ? existingData.week_commencing : (typeof weekCommencing !== 'undefined' && weekCommencing ? weekCommencing : '') %>" 
                    required>
         </div>
         
@@ -83,7 +83,7 @@ var currentPage = 'sales';
                             <td><%= new Date(week.week_commencing).toLocaleDateString('en-GB') %></td>
                             <td><%= week.boxes_sold %></td>
                             <td><%= week.installs_sold %></td>
-                            <td><a href="/sales?week_commencing=<%= encodeURIComponent(new Date(week.week_commencing).toISOString().split('T')[0]) %>" class="btn-link">Edit</a></td>
+                            <td><a href="/sales?week_commencing=<%= week.week_commencing %>" class="btn-link">Edit</a></td>
                         </tr>
                     <% }); %>
                 </tbody>
@@ -91,4 +91,33 @@ var currentPage = 'sales';
         </div>
     <% } %>
 </div>
+
+<script>
+async function deleteSalesWeek(weekCommencing, weekDisplay) {
+    if (!confirm(`Are you sure you want to delete sales data for week commencing ${weekDisplay}? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/sales/${encodeURIComponent(weekCommencing)}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Sales data deleted successfully');
+            location.reload();
+        } else {
+            alert('Error deleting sales data: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error deleting sales data: ' + error.message);
+    }
+}
+</script>
+
 <%- include('partials/footer') %>
