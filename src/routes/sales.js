@@ -135,5 +135,24 @@ router.post('/sales', requireAuth, async (req, res) => {
     }
 });
 
+// Delete sales data
+router.delete('/sales/:weekCommencing', requireAuth, async (req, res) => {
+    try {
+        await db.initializeSchema();
+        
+        const weekCommencing = req.params.weekCommencing;
+        const deleted = await db.deleteSalesWeekly(weekCommencing);
+        
+        if (deleted) {
+            res.json({ success: true, message: 'Sales data deleted successfully' });
+        } else {
+            res.status(404).json({ success: false, error: 'Sales data not found' });
+        }
+    } catch (error) {
+        console.error('Error deleting sales data:', error);
+        res.status(500).json({ success: false, error: 'Error deleting sales data: ' + error.message });
+    }
+});
+
 module.exports = router;
 
