@@ -207,6 +207,14 @@ async function upsertProductionWeekly(data) {
     return result.rows[0];
 }
 
+async function deleteProductionWeekly(weekCommencing) {
+    const result = await query(
+        'DELETE FROM production_weekly WHERE week_commencing = $1 RETURNING *',
+        [weekCommencing]
+    );
+    return result.rows[0] || null;
+}
+
 // Get sales data for MTD calculation (current month)
 async function getSalesMTD() {
     const sql = `
