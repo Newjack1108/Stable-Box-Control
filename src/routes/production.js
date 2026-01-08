@@ -143,24 +143,5 @@ router.post('/production', requireAuth, async (req, res) => {
     }
 });
 
-// Delete production data
-router.delete('/production/:weekCommencing', requireAuth, async (req, res) => {
-    try {
-        await db.initializeSchema();
-        
-        const weekCommencing = req.params.weekCommencing;
-        const deleted = await db.deleteProductionWeekly(weekCommencing);
-        
-        if (deleted) {
-            res.json({ success: true, message: 'Production data deleted successfully' });
-        } else {
-            res.status(404).json({ success: false, error: 'Production data not found' });
-        }
-    } catch (error) {
-        console.error('Error deleting production data:', error);
-        res.status(500).json({ success: false, error: 'Error deleting production data: ' + error.message });
-    }
-});
-
 module.exports = router;
 

@@ -83,10 +83,7 @@ var currentPage = 'sales';
                             <td><%= new Date(week.week_commencing).toLocaleDateString('en-GB') %></td>
                             <td><%= week.boxes_sold %></td>
                             <td><%= week.installs_sold %></td>
-                            <td style="display: flex; gap: 1rem; align-items: center;">
-                                <a href="/sales?week_commencing=<%= encodeURIComponent(new Date(week.week_commencing).toISOString().split('T')[0]) %>" class="btn-link">Edit</a>
-                                <button onclick="deleteSalesWeek('<%= new Date(week.week_commencing).toISOString().split('T')[0] %>', '<%= new Date(week.week_commencing).toLocaleDateString('en-GB') %>')" class="btn-delete" style="background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Delete</button>
-                            </td>
+                            <td><a href="/sales?week_commencing=<%= encodeURIComponent(new Date(week.week_commencing).toISOString().split('T')[0]) %>" class="btn-link">Edit</a></td>
                         </tr>
                     <% }); %>
                 </tbody>
@@ -94,33 +91,4 @@ var currentPage = 'sales';
         </div>
     <% } %>
 </div>
-
-<script>
-async function deleteSalesWeek(weekCommencing, weekDisplay) {
-    if (!confirm(`Are you sure you want to delete sales data for week commencing ${weekDisplay}? This action cannot be undone.`)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/sales/${encodeURIComponent(weekCommencing)}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert('Sales data deleted successfully');
-            location.reload();
-        } else {
-            alert('Error deleting sales data: ' + (result.error || 'Unknown error'));
-        }
-    } catch (error) {
-        alert('Error deleting sales data: ' + error.message);
-    }
-}
-</script>
-
 <%- include('partials/footer') %>

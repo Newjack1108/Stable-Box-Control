@@ -79,10 +79,7 @@ var currentPage = 'production';
                             <td><%= new Date(week.week_commencing).toLocaleDateString('en-GB') %></td>
                             <td><%= week.boxes_produced %></td>
                             <td><%= week.installs_completed %></td>
-                            <td style="display: flex; gap: 1rem; align-items: center;">
-                                <a href="/production?week_commencing=<%= encodeURIComponent(new Date(week.week_commencing).toISOString().split('T')[0]) %>" class="btn-link">Edit</a>
-                                <button onclick="deleteProductionWeek('<%= new Date(week.week_commencing).toISOString().split('T')[0] %>', '<%= new Date(week.week_commencing).toLocaleDateString('en-GB') %>')" class="btn-delete" style="background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Delete</button>
-                            </td>
+                            <td><a href="/production?week_commencing=<%= encodeURIComponent(new Date(week.week_commencing).toISOString().split('T')[0]) %>" class="btn-link">Edit</a></td>
                         </tr>
                     <% }); %>
                 </tbody>
@@ -90,33 +87,4 @@ var currentPage = 'production';
         </div>
     <% } %>
 </div>
-
-<script>
-async function deleteProductionWeek(weekCommencing, weekDisplay) {
-    if (!confirm(`Are you sure you want to delete production data for week commencing ${weekDisplay}? This action cannot be undone.`)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/production/${encodeURIComponent(weekCommencing)}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert('Production data deleted successfully');
-            location.reload();
-        } else {
-            alert('Error deleting production data: ' + (result.error || 'Unknown error'));
-        }
-    } catch (error) {
-        alert('Error deleting production data: ' + error.message);
-    }
-}
-</script>
-
 <%- include('partials/footer') %>

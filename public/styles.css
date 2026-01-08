@@ -368,24 +368,6 @@ body {
     text-decoration: underline;
 }
 
-.btn-delete {
-    background: #e74c3c !important;
-    color: white !important;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.btn-delete:hover {
-    background: #c0392b !important;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
-}
-
 /* Messages */
 .error-message {
     background: linear-gradient(135deg, #fee 0%, #fdd 100%);

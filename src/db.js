@@ -303,14 +303,6 @@ async function upsertSalesWeekly(data) {
     return result.rows[0];
 }
 
-async function deleteSalesWeekly(weekCommencing) {
-    const result = await query(
-        'DELETE FROM sales_weekly WHERE week_commencing = $1 RETURNING *',
-        [weekCommencing]
-    );
-    return result.rows[0] || null;
-}
-
 // Production weekly operations
 async function getProductionWeekly(weekCommencing = null) {
     if (weekCommencing) {
@@ -353,14 +345,6 @@ async function upsertProductionWeekly(data) {
         data.notes || null
     ]);
     return result.rows[0];
-}
-
-async function deleteProductionWeekly(weekCommencing) {
-    const result = await query(
-        'DELETE FROM production_weekly WHERE week_commencing = $1 RETURNING *',
-        [weekCommencing]
-    );
-    return result.rows[0] || null;
 }
 
 // Get sales data for MTD calculation (current month)
@@ -439,10 +423,8 @@ module.exports = {
     updateSettings,
     getSalesWeekly,
     upsertSalesWeekly,
-    deleteSalesWeekly,
     getProductionWeekly,
     upsertProductionWeekly,
-    deleteProductionWeekly,
     getSalesMTD,
     getProductionMTD,
     getSalesLast4Weeks,
